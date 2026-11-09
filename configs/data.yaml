@@ -1,0 +1,6 @@
+dataset_id: PolyAI/banking77
+dataset_revision: null # Must resolve to an immutable commit before ingestion.
+seed: 42
+validation_fraction: 0.1
+preprocessing_version: v1
+test_policy: preserve_official_test

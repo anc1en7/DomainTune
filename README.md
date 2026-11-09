@@ -1,0 +1,67 @@
+# DomainTune
+
+Reproducible BANKING77 intent classification comparing TF-IDF, unchanged
+Qwen2.5-0.5B-Instruct, and LoRA fine-tuning across 77 canonical intent classes.
+
+**Status: project initialized. No datasets downloaded, models trained, or benchmark
+results measured.** The [project specification](DomainTune_LLM_Fine_Tuning_Project_Spec.md)
+defines the full research plan and acceptance criteria.
+
+## Setup
+
+Install Python 3.12 and [uv](https://docs.astral.sh/uv/), then run:
+
+```powershell
+uv sync --locked
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest -q
+uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+Open `/docs` for the API contract. Liveness returns 200. Readiness, model info, and
+valid prediction requests return 503 until a validated model backend is implemented.
+Invalid request schemas return 422. This skeleton does not yet enforce the full
+serving contract (token limits, payload limits, timeouts, concurrency, or inference).
+
+Optional ML dependencies are resolved in `uv.lock`, but are not installed by default:
+
+```powershell
+uv sync --locked --extra ml
+```
+
+Validate CUDA/PyTorch compatibility before installing the ML extra for GPU work.
+No quantization backend is configured. See [hardware notes](docs/hardware-feasibility.md).
+
+## Included
+
+- Installable Python package and locked environment, Ruff, pytest, GitHub Actions.
+- Strict JSON intent parser, versioned chat messages, invalid-aware classification metrics.
+- FastAPI skeleton, proposed experiment configs, CPU service container definition.
+- Original specification and report templates; generated data and weights are ignored.
+
+```powershell
+docker build -t domaintune .
+docker run --rm -p 8000:8000 domaintune
+```
+
+## Next milestones
+
+1. Pin dataset/model revisions and record licenses; verify inference and a 20-step PEFT run.
+2. Implement ingestion, canonical labels, deterministic splits, and duplicate/leakage audit.
+3. Implement majority, TF-IDF, and unchanged-model validation baselines.
+4. Verify completion-only loss masking; train LoRA and complete a controlled ablation.
+5. Freeze the champion, evaluate the untouched official test split, then implement serving.
+
+The scripts described in specification section 12 are future interfaces and are not
+implemented yet. Configs are proposals, not executable experiment pipelines.
+Select prompts and checkpoints on validation only. Count invalid predictions as incorrect.
+Never silently truncate messages or invent canonical labels.
+
+## Sources and licensing
+
+- Dataset: [PolyAI/BANKING77](https://huggingface.co/datasets/PolyAI/banking77).
+- Candidate model: [Qwen2.5-0.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct).
+
+Dataset/model license verification and immutable revision pinning remain pending.
+No dataset or model artifacts are distributed here. No code license has been selected.

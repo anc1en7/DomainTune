@@ -1,0 +1,17 @@
+model_id: Qwen/Qwen2.5-0.5B-Instruct
+model_revision: null
+seed: 42
+r: 8
+lora_alpha: 16
+lora_dropout: 0.05
+target_modules: [q_proj, v_proj]
+epochs: 3
+learning_rate: 0.0002
+micro_batch_size: 1
+gradient_accumulation_steps: 16
+max_sequence_length: 256
+gradient_checkpointing: true
+warmup_ratio: 0.03
+weight_decay: 0.01
+selection_metric: validation_macro_f1
+# Proposed settings only; verify full prompt length and completion masking before use.

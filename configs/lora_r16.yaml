@@ -1,0 +1,3 @@
+# Controlled rank-only ablation against lora_r8.yaml; resolve inheritance in training CLI.
+base_config: lora_r8.yaml
+r: 16
