@@ -15,4 +15,6 @@ PyTorch build, CUDA runtime, BF16 support, model loading,
 token counts, peak memory, and 20-step training feasibility remain unverified.
 Driver-reported CUDA capability is not proof of a compatible installed PyTorch runtime.
 The 4 GiB GPU requires an actual measured LoRA smoke test before choosing settings.
-No local/cloud training decision has been made.
+User constraints: zero budget, local compute only, no paid APIs/cloud GPUs.
+Keep all project downloads, caches, temporary files, and artifacts on D: using
+`scripts/environment.ps1`. Reduce workloads if local training is constrained.

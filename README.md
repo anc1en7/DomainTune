@@ -12,12 +12,26 @@ defines the full research plan and acceptance criteria.
 Install Python 3.12 and [uv](https://docs.astral.sh/uv/), then run:
 
 ```powershell
+. .\scripts\environment.ps1
 uv sync --locked
 uv run ruff check .
 uv run ruff format --check .
 uv run pytest -q
 uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
+
+Dot-source `scripts/environment.ps1` in every new PowerShell session before running
+tools. It keeps uv/pip, Hugging Face, PyTorch, CUDA, and temporary caches under
+`D:\Code\DomainTune\.local`, the environment under `.venv`, and MLflow runs under
+`mlruns`. These settings apply to the current process and child processes only.
+Use `uv python install 3.12` after loading the script to install a project-local
+Python runtime on D:; use `uv sync --locked --python 3.12 --managed-python` to use it.
+
+**Budget: zero.** All training and inference run locally; no paid APIs or cloud GPUs.
+Free public model/dataset downloads still need internet access. If memory is tight,
+reduce the workload and document limits rather than moving to paid compute.
+Docker Desktop stores images separately: configure its disk image location on D:
+before building containers. This script does not move Docker or system tools.
 
 Open `/docs` for the API contract. Liveness returns 200. Readiness, model info, and
 valid prediction requests return 503 until a validated model backend is implemented.
