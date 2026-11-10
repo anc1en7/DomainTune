@@ -2,8 +2,8 @@
 
 ## Status and stopping point
 
-Phase 0 is complete. STOP HERE: the user requires stopping after each phase and
-waiting before starting the next. Phase 1 has not started. No full training,
+Phase 1 is complete. STOP HERE: the user requires stopping after each phase and
+waiting before starting the next. Phase 2 has not started. No full training,
 validation benchmarks, or official test evaluation has run. The API remains a
 skeleton returning 503 when a model backend is needed.
 
@@ -80,15 +80,29 @@ No tokenizer/model loading requires paid APIs or remote inference.
 Configs outside the Phase 0 runner remain proposals; the spec's future CLIs are not
 implemented. Model serving, full evaluation, ingestion/splits, and training CLIs remain.
 
-## Resume after user authorizes Phase 1
+## Phase 1 evidence
+
+Implemented `scripts/prepare_data.py`, `src/domaintune/data.py`, and audit module.
+Run with configs/data.yaml; cached pinned data works with HF_HUB_OFFLINE=1 and
+HF_DATASETS_OFFLINE=1. Offline fallback cache paths are checked for exact revision.
+Repeated full runs produce identical processed split hashes. Manifests and source
+checksums are in data/manifests; original texts remain ignored in data/processed.
+Data audit: reports/data_audit.md. Prepared train/validation/test: 8992/1000/3080.
+Excluded: 7 training rows matching normalized test text, 4 training duplicates.
+Zero normalized overlap between prepared partitions; 137 cross-split near-duplicate
+candidates retained as documented risk. Official test rows and labels untouched.
+Reviewed candidates and ten training examples in each of six ambiguous classes.
+30 tests pass; Ruff lint/format passes. No baseline or training run started.
+
+## Resume after user authorizes Phase 2
 
 1. Load the environment; verify clean Git state and existing tests.
-2. Implement pinned ingestion using existing revisions and canonical labels.
-3. Create deterministic IDs/hashes and stratified train/validation manifests.
-4. Audit nulls, label counts, Unicode, exact/normalized duplicates and near-duplicates.
-5. Define leakage handling without changing the official test benchmark silently.
-6. Write data audit and meaningful isolation/provenance tests; commit/push milestones.
-7. Stop after Phase 1. Do not begin baselines until requested.
+2. Read the frozen data policy and verify manifest hashes before baselines.
+3. Implement majority and TF-IDF baselines using only prepared training records.
+4. Implement unchanged-model validation baseline and evaluation harness.
+5. Select settings only using validation; never reuse the audit vectorizer.
+6. Record reproducible baseline results and commit/push verified milestones.
+7. Stop after Phase 2. Do not begin full LoRA training until requested.
 
 Never tune prompts, hyperparameters, or checkpoints on official test results.
 Count invalid outputs as incorrect. Never fabricate metrics or completed work.
