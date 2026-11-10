@@ -32,7 +32,7 @@
   "prompt_sha256": "37220052198fc894e1c4e241330a165c77ae51a2555f1330aa10921843f31b9b",
   "lock_sha256": "1fc06e1e84eb3876d18ddaa48c79ac0afaba5bc1bf6c99dcee8d3528fd6136e1",
   "python": "3.12.13",
-  "git_commit": "c687ae2c24dc624215bf96748fe0d4e24d508c3c",
+  "git_commit": "37a875eefe19c61bbf54853ca804cfb25a3ab867",
   "versions": {
     "scikit-learn": "1.9.1",
     "numpy": "2.5.4",
@@ -19233,7 +19233,7 @@
       ],
       "analyzer": "char_wb",
       "C": 4.0,
-      "elapsed_seconds": 20.678957799915224
+      "elapsed_seconds": 22.83284560008906
     },
     "tfidf_candidates": [
       {
@@ -19241,28 +19241,28 @@
         "C": 1.0,
         "accuracy": 0.859,
         "macro_f1": 0.8559498164635496,
-        "elapsed_seconds": 9.475540499901399
+        "elapsed_seconds": 11.39542970014736
       },
       {
         "analyzer": "word",
         "C": 4.0,
         "accuracy": 0.877,
         "macro_f1": 0.8723854552344273,
-        "elapsed_seconds": 10.754445899976417
+        "elapsed_seconds": 10.120133599964902
       },
       {
         "analyzer": "char_wb",
         "C": 1.0,
         "accuracy": 0.867,
         "macro_f1": 0.858067365741944,
-        "elapsed_seconds": 13.94975550007075
+        "elapsed_seconds": 14.700644999975339
       },
       {
         "analyzer": "char_wb",
         "C": 4.0,
         "accuracy": 0.892,
         "macro_f1": 0.8909865945531636,
-        "elapsed_seconds": 20.678957799915224
+        "elapsed_seconds": 22.83284560008906
       }
     ]
   }
