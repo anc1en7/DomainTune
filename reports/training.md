@@ -1,6 +1,20 @@
 # Phase 3: primary LoRA experiment
 
-Status: implementation and 640-token feasibility verified; primary run in progress.
+Status: primary run stopped at user request after saving epoch 1. Phase 3 incomplete.
+
+Epoch 1 completed 562 optimizer updates over all 8,992 training rows; mean update
+loss 0.13799548. The adapter and tokenizer are retained under
+`outputs/adapters/phase3-r8/epoch-1`. CPU integrity checks read all 96 finite
+adapter tensors and loaded the saved tokenizer. GPU training and worker processes
+have exited. Validation stopped after 103/1000 rows; no full validation metric or
+checkpoint selection is available. No official test evaluation ran.
+
+See `reports/phase3-stopped.json` and `docs/session-handoff.md`. Optimizer,
+scheduler, and RNG states were not saved: exact continuation is unavailable.
+Any later continuation from this adapter must be labeled as a separate experiment
+with reset state, or the original experiment can be restarted in a new directory.
+Wait for the user's instruction before resuming. Add stateful checkpoints and
+graceful stopping before another long run.
 
 The 640-token probe subsequently passed two optimizer updates in 22.24 seconds:
 peak allocated 2,222,181,376 bytes (2.07 GiB), reserved 2,462,056,448 bytes

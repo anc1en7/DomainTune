@@ -2,17 +2,46 @@
 
 ## Status and stopping point
 
-Phase 3 is running locally; do not launch a second training process.
-The user authorized Phase 3 on 2026-11-10. The hidden PowerShell worker runs
-`scripts/run_phase3.ps1`: three epochs, validation checkpoint selection,
-clean-process adapter reload, independent metric reconstruction, reports, tests,
-and a commit/push of verified evidence. It stops before Phase 4.
+Phase 3 was STOPPED at the user's request on 2026-11-10 at approximately
+21:45 IST. Do not resume training until the user asks. Phase 3 is incomplete.
+Epoch 1 completed all 8,992 training rows and 562 optimizer updates. Its adapter
+and tokenizer are saved at `outputs/adapters/phase3-r8/epoch-1` on D:.
+All 96 adapter tensors were independently read on CPU and checked finite;
+the saved tokenizer loads locally. This is an integrity check, not a full
+clean-process GPU prediction/reproducibility check.
+Training, launcher, publishing worker, and stop watcher have exited; GPU memory
+returned to 0 MiB. Nothing will continue or publish automatically.
+The worker `scripts/run_phase3.ps1` was interrupted after the first checkpoint;
+do not relaunch it unchanged, as its output directory already exists.
 Inspect `outputs/phase3-worker-status.txt`, `outputs/phase3-worker.stdout.log`,
 `outputs/phase3-worker.stderr.log`, and `outputs/adapters/phase3-r8/run.json`.
 Per-update progress is in `outputs/adapters/phase3-r8/training.jsonl`.
 No official test evaluation has run. The API remains a skeleton returning 503.
-If the worker fails, preserve its evidence and fix the cause before rerunning in
-a new output directory. Existing directories are never overwritten.
+Preserve all evidence. Existing directories are never overwritten.
+
+## Phase 3 stopping point and later continuation
+
+- Source used for training: `67bfb64ba4179f2b4a659144207f003af3a5c38b`.
+- Structured snapshot: `reports/phase3-stopped.json`; live manifest:
+  `outputs/adapters/phase3-r8/run.json`, status `stopped_at_epoch_checkpoint`.
+- Last optimizer update: 562/1686 planned; all completed updates are in
+  `outputs/adapters/phase3-r8/training.jsonl`. Mean update loss: 0.13799548.
+- Adapter SHA-256:
+  `3979fff650d4e7bdf5bb29b1345152056cae501c869b51a544cd7de2a87d1c57`.
+- Validation stopped after 103/1000 rows. Raw partial predictions are retained at
+  `outputs/adapters/phase3-r8/validation-epoch-1.jsonl`. They are incomplete;
+  no validation score, checkpoint selection, or full evaluation is claimed.
+- Crucial limitation: the original runner saves adapters/tokenizers, but not
+  optimizer, scheduler, or RNG states. Exact continuation is unavailable.
+  On user authorization, either restart the original three-epoch experiment
+  in a new output directory, or explicitly label a continuation from epoch 1
+  as a separate experiment with reset optimizer/scheduler state. Do not report
+  either as an exact resumed run. Add resumable state saving and graceful
+  stop handling before starting another long run.
+- The clean-process evaluation CLI currently compares against a completed
+  epoch-validation report; that report does not exist for this interrupted run.
+  Adapt the validation workflow before evaluating this saved checkpoint.
+- No Phase 4 work has started. No official test evaluation has run.
 
 Read AGENTS.md and DomainTune_LLM_Fine_Tuning_Project_Spec.md before future work.
 The user also requires committing and pushing every crucial verified change.
