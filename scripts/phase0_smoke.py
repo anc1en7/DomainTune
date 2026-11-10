@@ -155,7 +155,11 @@ def main():
             current.eval()
             with torch.inference_mode():
                 output = current.generate(
-                    prompt, max_new_tokens=64, do_sample=False, pad_token_id=tokenizer.pad_token_id
+                    prompt,
+                    attention_mask=torch.ones_like(prompt),
+                    max_new_tokens=64,
+                    do_sample=False,
+                    pad_token_id=tokenizer.pad_token_id,
                 )
             return tokenizer.decode(output[0, prompt.shape[1] :], skip_special_tokens=True)
 

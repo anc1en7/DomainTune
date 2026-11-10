@@ -11,7 +11,7 @@
 
 ## 1. Executive summary
 
-DomainTune is a complete machine-learning engineering project, **not just an API wrapper**. It demonstrates dataset validation, data leakage controls, supervised fine-tuning, LoRA/QLoRA, hyperparameter experimentation, quantitative evaluation, error analysis, and model deployment. The initial benchmark uses **BANKING77**, which has **13,083 labeled utterances across 77 intent classes**. The model candidate is **Qwen2.5-0.5B-Instruct**; use a larger model or cloud GPU only after measuring resource needs.
+DomainTune is a complete machine-learning engineering project, **not just an API wrapper**. It demonstrates dataset validation, data leakage controls, supervised fine-tuning, LoRA/QLoRA, hyperparameter experimentation, quantitative evaluation, error analysis, and model deployment. The initial benchmark uses **BANKING77**, which has **13,083 labeled utterances across 77 intent classes**. The model candidate is **Qwen2.5-0.5B-Instruct**; use a larger model only after measuring local resource needs. Budget is zero; paid APIs, cloud GPUs, and billable hosting are excluded.
 
 ### 1.1 Questions the project must answer
 
@@ -42,7 +42,7 @@ DomainTune is a complete machine-learning engineering project, **not just an API
 - Supervised instruction/completion training with parameter-efficient adapters.
 - Fair comparisons on a fixed, untouched test split.
 - API-based inference and reproducible model packaging.
-- Local GPU feasibility assessment; cloud fallback if necessary.
+- Local GPU feasibility assessment; reduce workload if local resources are insufficient.
 
 ### Out of scope in v1
 
@@ -199,7 +199,7 @@ All baselines must use the **same final held-out test examples** and identical m
 | Evaluation cadence | At least once per epoch |
 | Checkpoint selection | Best validation macro-F1, not test score |
 
-**Important:** QLoRA relies on compatible 4-bit GPU kernels and libraries. Laptop GPU/CUDA combinations can be difficult; test a minimal 20-step run first. Fallback to standard LoRA, a smaller sequence length, or cloud GPU when needed. Do not report parameter-count or memory savings without measuring them.
+**Important:** QLoRA relies on compatible 4-bit GPU kernels and libraries. Laptop GPU/CUDA combinations can be difficult; test a minimal 20-step run first. Fall back to standard LoRA or reduce the workload without truncating labels or targets. Document local hardware limitations if necessary. Do not report parameter-count or memory savings without measuring them.
 
 ### 5.4 Controlled experiments
 
@@ -402,7 +402,7 @@ Each phase has a specific **purpose, implementation tasks, deliverables, validat
 3. Install compatible `torch`, `transformers`, `datasets`, `peft`, `trl`, `accelerate`, `scikit-learn`, `mlflow`, `fastapi`, `uvicorn`, `pytest`, and optionally `bitsandbytes`.
 4. Load Qwen2.5-0.5B-Instruct; generate one deterministic response using its chat template.
 5. Run a **20-step PEFT smoke train** on tiny synthetic/public examples; monitor VRAM and step time.
-6. Make a configuration decision: local LoRA, local QLoRA, or cloud-GPU training.
+6. Make a configuration decision: local LoRA, compatible local QLoRA, or document a local hardware limitation. Budget is zero; cloud-GPU training is excluded.
 7. Freeze dependency versions and create `docs/hardware-feasibility.md`.
 
 **Deliverables:** Git repository, working environment, hardware report, model load test, 20-step smoke-test log.
@@ -595,7 +595,7 @@ Each phase has a specific **purpose, implementation tasks, deliverables, validat
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| Laptop VRAM insufficient | Training blocked | Smoke test; shorter sequences; LoRA or cloud GPU |
+| Laptop VRAM insufficient | Training blocked | Smoke test; reduce workload; compatible local LoRA/QLoRA; document hardware limits |
 | QLoRA dependency mismatch | Broken CUDA kernels | Pin compatible versions; fall back to LoRA |
 | Model outputs invalid labels | Misleading accuracy | Strict parser, invalid-rate reporting, optional constrained decoding as separate configuration |
 | Data leakage | Inflated metrics | Split manifests, duplicate audit, test quarantine |

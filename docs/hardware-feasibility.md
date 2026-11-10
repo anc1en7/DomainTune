@@ -31,7 +31,9 @@ Keep all project downloads, caches, temporary files, and artifacts on D: using
 ```powershell
 . .\scripts\environment.ps1
 uv sync --locked --extra ml
-uv run --locked --extra ml python scripts/phase0_smoke.py
+uv run --locked --extra ml python scripts/phase0_smoke.py `
+  --model-revision 7ae557604adf67be50417f59c2c2f167def9a775 `
+  --dataset-revision 1846984189f2bc0ac51c6fc3a600fa9e1714e0c6
 ```
 
 The smoke runner resolves immutable upstream revisions, records license metadata,

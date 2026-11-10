@@ -1,0 +1,8 @@
+# Immutable inputs resolved from the official Hugging Face repositories on 2026-11-10.
+model_id: Qwen/Qwen2.5-0.5B-Instruct
+model_revision: 7ae557604adf67be50417f59c2c2f167def9a775
+dataset_id: PolyAI/banking77
+dataset_revision: 1846984189f2bc0ac51c6fc3a600fa9e1714e0c6
+dataset_license: CC-BY-4.0
+model_license: Apache-2.0
+# This runner uses argparse; pass these pins as command-line flags (see hardware notes).
