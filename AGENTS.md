@@ -1,5 +1,8 @@
 # Project constraints
 
+- Commit and push to GitHub after each crucial, verified change. Keep large
+  downloaded artifacts and generated checkpoints out of Git.
+
 - Budget is zero: use local compute and free public downloads only. Do not use paid
   APIs, cloud GPUs, billable hosting, or services requiring payment.
 - Keep project environments, downloaded runtimes, caches, temporary files, datasets,
