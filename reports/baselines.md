@@ -5,6 +5,27 @@ validation rows. The official test partition is not loaded by the runner. The
 near-duplicate risks described in `data_audit.md` still apply. These are validation
 results used for selection, not unbiased final test estimates.
 
+Completed locally on 2026-11-10. No official test evaluation or full training ran.
+
+| System | Validation accuracy | Macro-F1 | Invalid output |
+|---|---:|---:|---:|
+| Majority class | 1.9% | 0.000484 | 0% |
+| TF-IDF + logistic regression | 89.2% | 0.890987 | 0% |
+| Unchanged Qwen 0.5B, v1 zero-shot | 13.7% | 0.152461 | 60.8% |
+
+The unchanged model produced parseable JSON for 99.9% of messages, but only 39.2%
+met the strict output contract. There were 137 correct, 255 valid but wrong, and
+608 invalid predictions. Formatting alone does not ensure a canonical intent.
+This full-label zero-shot configuration is substantially worse than the selected
+TF-IDF baseline. No claim is made about other prompts or models. Keep this v1
+prompt fixed for the primary LoRA comparison; any future prompt experiment must
+be separately versioned and evaluated on validation only.
+
+Qwen latency was 1,022 ms P50 and 1,441 ms P95; serial throughput was 0.950
+messages/second. Peak allocated GPU memory was 1.002 GiB and peak reserved memory
+1.109 GiB. Timed inference totaled about 17.5 minutes, excluding model loading
+and warm-up. These measurements are subject to the mixed-load caveat below.
+
 ## Reproduce
 
 Run from the repository root with the locked ML extra installed:
@@ -30,6 +51,8 @@ Before fitting or prediction, the runner verifies processed train and validation
 SHA-256 values against frozen provenance, then checks text-free row manifests and
 label mappings. Reports record those hashes, the provenance hash, prompt source
 hash, lockfile hash, source commit, configuration, and framework versions.
+The raw generation log remains local; the committed report includes the wrong
+sample IDs and predictions, not dataset text or model weights.
 
 ## Classical baselines
 
@@ -89,6 +112,9 @@ is then timed once, in source order. Timing includes chat tokenization, device
 transfer, generation, and decoding, with CUDA synchronization. P50/P95 and
 throughput describe this local serial run, not a production load test. Peak GPU
 allocated/reserved memory is reset after warm-up and measured over evaluation.
+The recorded Phase 2 run initially overlapped with classical-baseline CPU work;
+latency is descriptive under that mixed system load, not an isolated performance
+comparison. A controlled benchmark across selected models remains future work.
 
 ## Verification
 
@@ -100,3 +126,8 @@ open processed test rows. Final official test evaluation belongs to Phase 5.
 A second full classical run reproduced all candidate metrics and selected-model
 per-class scores, error IDs, and confusion counts exactly; only timings and source
 commit metadata changed.
+All 1,000 saved Qwen outputs were independently reparsed after completion and
+matched to frozen validation sample IDs. Recomputed aggregate metrics, per-class
+metrics, confusion matrix, and error records match the committed report exactly.
+All 33 tests and Ruff lint/format checks passed. B0/B1/B2 are reproducible using
+the commands above. Phase 2 is complete; stop before Phase 3 until requested.

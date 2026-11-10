@@ -3,10 +3,13 @@
 Reproducible BANKING77 intent classification comparing TF-IDF, unchanged
 Qwen2.5-0.5B-Instruct, and LoRA fine-tuning across 77 canonical intent classes.
 
-**Status: Phase 1 complete. Frozen splits contain 8,992 training, 1,000 validation,
-and 3,080 unchanged official test rows. Eleven training duplicates were excluded;
-137 near-duplicate candidate pairs remain documented risks. No benchmark results
-or full training exist. Work stops here until Phase 2 is requested.**
+**Status: Phase 2 complete. Validation accuracy / macro-F1: TF-IDF 89.2% / 0.891;
+unchanged Qwen 13.7% / 0.152, with 60.8% invalid outputs. No official test
+evaluation or full training has run. Work stops here until Phase 3 is requested.**
+See the [baseline report](reports/baselines.md) for settings and reproduction.
+Frozen splits contain 8,992 training, 1,000 validation, and 3,080 official test rows.
+Eleven training duplicates were excluded; 137 near-duplicate candidate pairs
+remain documented risks.
 See the [data audit](reports/data_audit.md) for reproduction and leakage policy.
 See [hardware evidence](docs/hardware-feasibility.md). The [project specification](DomainTune_LLM_Fine_Tuning_Project_Spec.md)
 defines the full research plan and acceptance criteria.
@@ -66,13 +69,15 @@ docker run --rm -p 8000:8000 domaintune
 ## Next milestones
 
 1. Phase 1 complete: ingestion, canonical labels, deterministic splits, and leakage audit.
-2. Phase 2 next: implement majority, TF-IDF, and unchanged-model validation baselines.
+2. Phase 2 complete: majority, TF-IDF, and unchanged-model validation baselines.
 3. Train LoRA with verified completion-only loss and complete a controlled ablation.
 4. Freeze the champion, evaluate the untouched official test split, then implement serving.
 
-`scripts/prepare_data.py --config configs/data.yaml` is implemented (requires the ML
-extra). Other interfaces in specification section 12 remain future work; training
-and baseline configs remain proposals.
+`scripts/prepare_data.py --config configs/data.yaml` and
+`scripts/run_baselines.py --config configs/baseline.yaml` are implemented (require
+the ML extra). See the baseline report for separate classical and LLM commands.
+Training, final evaluation, and benchmark CLIs in specification section 12 remain
+future work; training configs remain proposals.
 Select prompts and checkpoints on validation only. Count invalid predictions as incorrect.
 Never silently truncate messages or invent canonical labels.
 

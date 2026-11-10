@@ -2,9 +2,9 @@
 
 ## Status and stopping point
 
-Phase 1 is complete. STOP HERE: the user requires stopping after each phase and
-waiting before starting the next. Phase 2 has not started. No full training,
-validation benchmarks, or official test evaluation has run. The API remains a
+Phase 2 is complete. STOP HERE: the user requires stopping after each phase and
+waiting before starting the next. Phase 3 has not started. Validation baselines
+are complete; no full training or official test evaluation has run. The API remains a
 skeleton returning 503 when a model backend is needed.
 
 Read AGENTS.md and DomainTune_LLM_Fine_Tuning_Project_Spec.md before future work.
@@ -20,7 +20,7 @@ The user also requires committing and pushing every crucial verified change.
 - Existing shared C: installations/caches are not project-owned; do not move/delete.
 - Repository: https://github.com/anc1en7/DomainTune (private), main tracks origin/main.
 - GitHub CLI is authenticated as anc1en7. Never print credentials.
-- Sandbox blocks network and .git writes; use the normal escalation mechanism.
+- Current session allowed network and Git writes directly; commits were pushed.
 
 ## Verified environment
 
@@ -94,15 +94,47 @@ candidates retained as documented risk. Official test rows and labels untouched.
 Reviewed candidates and ten training examples in each of six ambiguous classes.
 30 tests pass; Ruff lint/format passes. No baseline or training run started.
 
-## Resume after user authorizes Phase 2
+## Phase 2 evidence
+
+Implemented `scripts/run_baselines.py`, `src/domaintune/baselines.py`, and
+`src/domaintune/evaluate.py`. The runner verifies frozen train/validation processed
+hashes, row manifests, and labels; it never loads processed test rows. Versioned
+v1 prompt and strict parser are unchanged. Reports include source commit, data,
+prompt, provenance and lock hashes, package versions and configuration.
+
+- `reports/baselines-classical.json`: majority accuracy 0.019, macro-F1
+  0.0004843047. Best TF-IDF accuracy 0.892, macro-F1 0.8909865946.
+- Four declared TF-IDF candidates: word 1-2 grams / char_wb 3-5 grams, C=1/4.
+  Winner char_wb, C=4; sublinear_tf=True, min_df=2, lbfgs, max_iter=1000.
+  All learned preprocessing fits only training rows, never audit features.
+- Full classical rerun exactly reproduced candidate metrics, selected-model
+  per-class scores, error IDs and confusion counts.
+- `reports/baselines-llm.json`: unchanged pinned Qwen, BF16, SDPA, greedy decoding,
+  max_new_tokens=48, batch 1, v1 full-label chat. 1,000 validation examples:
+  accuracy 0.137, macro-F1 0.1524607031, invalid rate 0.608, JSON parse rate 0.999.
+- Qwen P50/P95 1022/1441 ms, throughput 0.950 messages/sec, peak allocated/reserved
+  1.002/1.109 GiB. Early timing overlapped classical CPU work; these are descriptive
+  local timings, not a controlled cross-model performance benchmark.
+- Raw prediction log stays ignored at `outputs/phase2/unchanged_predictions.jsonl`.
+  All 1,000 outputs were independently reparsed, matched to frozen sample IDs,
+  and reconstructed metrics/errors matched exactly.
+- `reports/baselines.md`: reproduction commands, selection protocol, results,
+  error summaries and limitations. No few-shot or prompt search was performed.
+- 33 tests pass; Ruff lint and format checks pass. Existing upstream Starlette
+  TestClient deprecation warning remains. No large model/data artifacts committed.
+
+## Resume after user authorizes Phase 3
 
 1. Load the environment; verify clean Git state and existing tests.
-2. Read the frozen data policy and verify manifest hashes before baselines.
-3. Implement majority and TF-IDF baselines using only prepared training records.
-4. Implement unchanged-model validation baseline and evaluation harness.
-5. Select settings only using validation; never reuse the audit vectorizer.
-6. Record reproducible baseline results and commit/push verified milestones.
-7. Stop after Phase 2. Do not begin full LoRA training until requested.
+2. Read the Phase 3 specification and baseline report; verify frozen manifests.
+3. Implement training CLI and completion-only masking; keep v1 prompt for the
+   primary matched comparison. Reuse strict parsing/evaluation across models.
+4. Verify 640-token full-data memory feasibility on the 4 GiB GPU before a full run.
+   Phase 0 only established fixed-padding 551-token feasibility on 32 rows.
+5. Train using prepared training rows; use validation macro-F1 for checkpoint
+   selection, never official test results. Log exact revisions and resource use.
+6. Verify clean-process adapter reload and reproducible validation evaluation.
+7. Commit/push crucial verified milestones; stop after Phase 3 before ablations.
 
 Never tune prompts, hyperparameters, or checkpoints on official test results.
 Count invalid outputs as incorrect. Never fabricate metrics or completed work.
