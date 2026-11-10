@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from domaintune.baselines import load_frozen_data
+from domaintune.baselines import classical_baselines, load_frozen_data
 from domaintune.evaluate import evaluation_report
 
 
@@ -32,3 +32,33 @@ def test_tampered_data_rejected_before_modeling(tmp_path):
     (tmp_path / "data/processed/train.jsonl").write_text("tampered")
     with pytest.raises(ValueError, match="checksum"):
         load_frozen_data(tmp_path)
+
+
+def test_vectorizer_fits_training_only(monkeypatch):
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    fitted = []
+    original = TfidfVectorizer.fit_transform
+
+    def tracked_fit(self, corpus, y=None):
+        fitted.append(list(corpus))
+        return original(self, corpus, y)
+
+    monkeypatch.setattr(TfidfVectorizer, "fit_transform", tracked_fit)
+    train = [
+        {"text": text, "intent_name": label}
+        for text, label in [
+            ("card missing", "a"),
+            ("card missing now", "a"),
+            ("transfer pending", "b"),
+            ("transfer pending now", "b"),
+        ]
+    ]
+    validation = [{"sample_id": "heldout", "text": "unseen validation", "intent_name": "a"}]
+    result = classical_baselines(
+        {"train": train, "validation": validation},
+        ["a", "b"],
+        {"seed": 42, "tfidf": {"analyzers": ["word"], "C": [1.0]}},
+    )
+    assert fitted == [[r["text"] for r in train]]
+    assert result["majority"]["selected_label"] == "a"
