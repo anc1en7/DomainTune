@@ -2,5 +2,5 @@ seed: 42
 selection_split: validation
 systems: [majority, tfidf_logistic_regression, unchanged_llm]
 model_id: Qwen/Qwen2.5-0.5B-Instruct
-model_revision: null # Pin before model download.
+model_revision: 7ae557604adf67be50417f59c2c2f167def9a775
 prompt_version: v1

@@ -3,8 +3,10 @@
 Reproducible BANKING77 intent classification comparing TF-IDF, unchanged
 Qwen2.5-0.5B-Instruct, and LoRA fine-tuning across 77 canonical intent classes.
 
-**Status: project initialized. No datasets downloaded, models trained, or benchmark
-results measured.** The [project specification](DomainTune_LLM_Fine_Tuning_Project_Spec.md)
+**Status: Phase 0 complete. Pinned data and model downloaded; local BF16 LoRA
+completed a 20-step smoke test and adapter reload with 2.15 GiB peak reserved memory.
+No benchmark results or full training exist. Work stops here until Phase 1 is requested.**
+See [hardware evidence](docs/hardware-feasibility.md). The [project specification](DomainTune_LLM_Fine_Tuning_Project_Spec.md)
 defines the full research plan and acceptance criteria.
 
 ## Setup
@@ -61,11 +63,10 @@ docker run --rm -p 8000:8000 domaintune
 
 ## Next milestones
 
-1. Pin dataset/model revisions and record licenses; verify inference and a 20-step PEFT run.
-2. Implement ingestion, canonical labels, deterministic splits, and duplicate/leakage audit.
-3. Implement majority, TF-IDF, and unchanged-model validation baselines.
-4. Verify completion-only loss masking; train LoRA and complete a controlled ablation.
-5. Freeze the champion, evaluate the untouched official test split, then implement serving.
+1. Phase 1: implement ingestion, canonical labels, deterministic splits, and duplicate/leakage audit.
+2. Implement majority, TF-IDF, and unchanged-model validation baselines.
+3. Train LoRA with verified completion-only loss and complete a controlled ablation.
+4. Freeze the champion, evaluate the untouched official test split, then implement serving.
 
 The scripts described in specification section 12 are future interfaces and are not
 implemented yet. Configs are proposals, not executable experiment pipelines.
@@ -77,5 +78,7 @@ Never silently truncate messages or invent canonical labels.
 - Dataset: [PolyAI/BANKING77](https://huggingface.co/datasets/PolyAI/banking77).
 - Candidate model: [Qwen2.5-0.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct).
 
-Dataset/model license verification and immutable revision pinning remain pending.
+Pinned revisions are in `configs/phase0.yaml`. Upstream model metadata declares
+Apache-2.0; the dataset card declares CC-BY-4.0. Preserve upstream attribution and
+review redistribution requirements before publishing model or dataset artifacts.
 No dataset or model artifacts are distributed here. No code license has been selected.

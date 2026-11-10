@@ -1,5 +1,5 @@
 model_id: Qwen/Qwen2.5-0.5B-Instruct
-model_revision: null
+model_revision: 7ae557604adf67be50417f59c2c2f167def9a775
 seed: 42
 r: 8
 lora_alpha: 16
@@ -9,9 +9,11 @@ epochs: 3
 learning_rate: 0.0002
 micro_batch_size: 1
 gradient_accumulation_steps: 16
-max_sequence_length: 256
+max_sequence_length: 640
 gradient_checkpointing: true
 warmup_ratio: 0.03
 weight_decay: 0.01
 selection_metric: validation_macro_f1
-# Proposed settings only; verify full prompt length and completion masking before use.
+# Full official training prompts measured at 530-625 tokens in Phase 0.
+# 640 is a proposed full-data budget; smoke results apply to their recorded padded length.
+# Full training and validation checkpoint selection are not implemented yet.

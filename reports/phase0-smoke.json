@@ -1,0 +1,90 @@
+{
+  "status": "passed",
+  "steps": 20,
+  "accumulation": 16,
+  "examples": 32,
+  "micro_batch_size": 1,
+  "lora": {
+    "r": 8,
+    "alpha": 16,
+    "dropout": 0.05,
+    "target_modules": [
+      "q_proj",
+      "v_proj"
+    ]
+  },
+  "learning_rate": 0.0002,
+  "optimizer": "AdamW",
+  "weight_decay": 0.01,
+  "gradient_checkpointing": true,
+  "model_id": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "dataset_id": "PolyAI/banking77",
+  "dataset_revision": "1846984189f2bc0ac51c6fc3a600fa9e1714e0c6",
+  "model_license": "apache-2.0",
+  "dataset_license": [
+    "cc-by-4.0"
+  ],
+  "python": "3.12.13",
+  "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU",
+  "cuda": "12.8",
+  "bf16_supported": true,
+  "versions": {
+    "torch": "2.11.0+cu128",
+    "transformers": "4.57.6",
+    "datasets": "4.8.5",
+    "peft": "0.21.2",
+    "accelerate": "1.15.0"
+  },
+  "seed": 42,
+  "prompt_version": "v1",
+  "token_lengths": {
+    "min": 530,
+    "max": 625,
+    "over_256": 10003,
+    "training_rows": 10003
+  },
+  "mask_verified": true,
+  "sample_hash": "5dea6438e4cd89fec3322545a473ed193b88581672d6f296032a1fd5b300ac28",
+  "padded_smoke_sequence_length": 551,
+  "smoke_label_counts": {
+    "card_arrival": 32
+  },
+  "precision": "torch.bfloat16",
+  "load_seconds": 1.6116349999792874,
+  "base_output": "{\"intent\": \"status\"}",
+  "base_parse_error": "Unknown intent",
+  "inference_peak_bytes": 1060737024,
+  "parameters": {
+    "trainable": 540672,
+    "total": 494573440
+  },
+  "losses": [
+    0.3966850822325796,
+    0.25445167504949495,
+    0.1194454071810469,
+    0.03736851138819475,
+    0.014951075791032054,
+    0.00566103224264225,
+    0.002522460403270088,
+    0.0013013544121349696,
+    0.000666413179715164,
+    0.0004866613180638524,
+    0.00036818407170358114,
+    0.000336294580847607,
+    0.0003122335419902811,
+    0.00030173455888871104,
+    0.00030145468736009207,
+    0.0003042836324311793,
+    0.00030895069357939065,
+    0.00030161725408106577,
+    0.00028234375349711627,
+    0.0002696420951906475
+  ],
+  "train_seconds": 226.17350980010815,
+  "train_peak_allocated_bytes": 2056892416,
+  "train_peak_reserved_bytes": 2306867200,
+  "reloaded_output": "{\"intent\": \"card_arrival\"}",
+  "adapter_reload_passed": true,
+  "elapsed_seconds": 301.78847950021736
+}

@@ -1,146 +1,94 @@
-# Session handoff — 2026-11-09
+﻿# Session handoff - 2026-11-10
 
-## Goal and current state
+## Status and stopping point
 
-DomainTune compares classical and small instruction-LLM baselines against LoRA
-fine-tuning for BANKING77's 77 banking intent classes. The full plan is in
-`DomainTune_LLM_Fine_Tuning_Project_Spec.md`; read it and `AGENTS.md` before work.
+Phase 0 is complete. STOP HERE: the user requires stopping after each phase and
+waiting before starting the next. Phase 1 has not started. No full training,
+validation benchmarks, or official test evaluation has run. The API remains a
+skeleton returning 503 when a model backend is needed.
 
-The user requested project initialization locally and on GitHub. That is complete.
-This is a scaffold, not a completed ML pipeline. No dataset or model has been
-downloaded, no training has run, and no benchmark results exist.
+Read AGENTS.md and DomainTune_LLM_Fine_Tuning_Project_Spec.md before future work.
+The user also requires committing and pushing every crucial verified change.
 
-## Nonnegotiable user constraints
+## Constraints and workspace
 
-- Zero budget. No paid APIs, cloud GPUs, or billable services. Run locally and use
-  free public downloads. Reduce workload if hardware is insufficient.
-- Keep project runtimes, environments, caches, temporary files, datasets, weights,
-  checkpoints, logs, and reports on D:. C: has limited space.
-- Load `scripts/environment.ps1` in every new PowerShell session before tools.
-  Its environment variables are process-scoped, not global or automatically persistent.
-- Do not delete/move shared system installations or caches without checking scope.
-- GitHub repository is private; retain that setting unless the user requests otherwise.
+- Zero budget: local compute and free public downloads only; no paid APIs,
+  cloud GPUs, or billable hosting.
+- Workspace: D:\Code\DomainTune. All project environments, downloads, caches,
+  temporary files, data, weights, adapters, logs, and reports stay on D:.
+- Dot-source scripts/environment.ps1 in every new PowerShell session before tools.
+- Existing shared C: installations/caches are not project-owned; do not move/delete.
+- Repository: https://github.com/anc1en7/DomainTune (private), main tracks origin/main.
+- GitHub CLI is authenticated as anc1en7. Never print credentials.
+- Sandbox blocks network and .git writes; use the normal escalation mechanism.
 
-## Workspace and repository
+## Verified environment
 
-- Workspace: `D:\Code\DomainTune` (Windows, PowerShell).
-- Repository: https://github.com/anc1en7/DomainTune
-- Branch: `main`, tracking `origin/main`.
-- GitHub CLI is authenticated as `anc1en7`; never print credentials.
-- Initial commit: `edf40e6` — project scaffold.
-- Storage/budget commit: `13dbb4b` — local-only constraints and D: environment.
-- Worktree was clean before writing this handoff.
+Intel i5-12450H, RTX 3050 Laptop GPU with 4096 MiB VRAM, approximately 15.7 GiB RAM.
+NVIDIA driver 610.62. Project-managed Python 3.12.13 and .venv are on D:.
+ML extra installed: torch 2.11.0+cu128, transformers 4.57.6, datasets 4.8.5,
+peft 0.21.2, accelerate 1.15.0. Exact packages are in uv.lock.
+Windows PyTorch uses an explicit official CUDA 12.8 index. CUDA and BF16 verified.
+D: had about 142 GiB free after dependency installation, before model/data retrieval.
 
-## What exists
+## Phase 0 evidence
 
-- `pyproject.toml`, `uv.lock`, editable package `src/domaintune`, Python environment.
-- Strict JSON parser rejecting extra fields, duplicate keys, and noncanonical labels.
-- Versioned chat prompt builder; metrics counting invalid predictions as incorrect.
-- FastAPI skeleton with request schemas and health/model/prediction routes.
-- Proposed data, baseline, LoRA rank-8 and rank-16 configs (not executable pipelines).
-- Tests, Ruff, GitHub Actions, Dockerfile, ignored data/artifact directories.
-- README, hardware notes, and clearly pending report templates.
-- `AGENTS.md` stores user constraints for future agents.
+- scripts/phase0_smoke.py: executable local inference/training/reload probe.
+- configs/phase0.yaml: immutable input revisions and upstream licenses.
+- reports/phase0-smoke.json: successful fixed-shape run with exact settings and losses.
+- reports/phase0-initial-smoke.json: initial successful run with excessive reservation.
+- reports/phase0-labels.json: exact canonical 77-label array; array index is intent ID.
+- docs/hardware-feasibility.md: measured results, limitations, reproduction commands.
 
-The API deliberately returns 503 for readiness, model info, and valid predictions:
-there is no model backend. Liveness returns 200; invalid request schemas return 422.
-Token/body limits, concurrency, timeouts, inference, full evaluation, ingestion,
-training, and benchmark CLIs still need implementation. Specification section 12
-contains future CLI contracts, not currently available scripts.
+Model: Qwen/Qwen2.5-0.5B-Instruct at
+7ae557604adf67be50417f59c2c2f167def9a775 (upstream metadata: Apache-2.0).
+Dataset: PolyAI/banking77 at
+1846984189f2bc0ac51c6fc3a600fa9e1714e0c6 (dataset card: CC-BY-4.0).
+Preserve attribution and review redistribution obligations before distributing artifacts.
+No software code license has been selected.
 
-## Hardware and installed environment
+Full-label chat plus completion lengths are 530-625 tokens across 10,003 official
+training rows. All exceed 256 tokens. Proposed LoRA config now uses 640, but full-data
+640-token memory feasibility remains to be checked later. Never truncate labels/targets.
 
-- CPU: Intel Core i5-12450H.
-- GPU: RTX 3050 Laptop GPU, 4096 MiB VRAM; NVIDIA driver 610.62.
-- RAM: 16,869,548,032 bytes (about 15.7 GiB).
-- Project-managed Python: 3.12.13 under `.local\python` on D:.
-- `.venv` was rebuilt to use that D: Python (previously used a C: installation).
-- uv 0.11.8; Git 2.47.0.windows.1; Docker CLI is installed.
-- Base/dev dependencies installed. Optional `ml` extra is locked but NOT installed.
-- PyTorch CUDA build, BF16 support, model loading, and training feasibility unverified.
+Successful smoke configuration: BF16 standard LoRA r=8, alpha=16, dropout=0.05,
+q_proj/v_proj, micro-batch 1, accumulation 16, AdamW lr=2e-4, seed 42,
+gradient checkpointing, response-only loss, fixed padding to 551 tokens.
+20 optimizer updates completed in 226.17 seconds; peak allocated 1.92 GiB,
+peak reserved 2.15 GiB. Saved adapter reloaded with a fresh base model in the same
+process and generated successfully. Adapter weights: 2,175,168 bytes.
+All 32 examples are card_arrival: this is a mechanics probe, not quality evidence.
+Initial unchanged-model output used unknown label status and was correctly rejected.
+No baseline accuracy or macro-F1 has been measured.
 
-## Resume commands
+Large artifacts stay ignored under outputs/phase0-fixed-shape/adapter and .local.
+The initial run remains at outputs/phase0-attempt3. Early failed reports:
+outputs/phase0 (sandbox network blocked), outputs/phase0-network (metadata access bug,
+fixed). Initial dynamic-shape run reserved 4.93 GiB despite only 1.92 GiB live tensors;
+fixed padding and clearing inference cache reduced reservation to 2.15 GiB.
+Both successful runs are retained as evidence. The dataset builder cached both official
+splits, but only training records were used; no test predictions or tuning occurred.
 
-```powershell
-Set-Location D:\Code\DomainTune
-. .\scripts\environment.ps1
-uv sync --locked --python 3.12 --managed-python
-uv run ruff check .
-uv run ruff format --check .
-uv run pytest -q
-```
+## Verification and cautions
 
-The environment script points uv/pip, Hugging Face hub/datasets/assets/Xet, PyTorch,
-extensions/compiler, CUDA, matplotlib, and temporary caches into `.local` on D:.
-MLflow tracking points at `D:\Code\DomainTune\mlruns`; `.venv` stays in the workspace.
-These paths are ignored by Git. Run all future installation/training commands with
-the script loaded. Do not install the large ML extra before checking GPU packaging.
+All 18 existing tests passed with the ML stack installed; Ruff lint/format passed.
+Starlette emits an upstream TestClient deprecation warning. Pytest cache writes can
+be sandbox-blocked; use -p no:cacheprovider for local verification.
+Docker remains untested because its Linux daemon was stopped. Before Docker builds,
+configure Docker Desktop disk image storage on D: separately.
+No tokenizer/model loading requires paid APIs or remote inference.
+Configs outside the Phase 0 runner remain proposals; the spec's future CLIs are not
+implemented. Model serving, full evaluation, ingestion/splits, and training CLIs remain.
 
-## Verification and caveats
+## Resume after user authorizes Phase 1
 
-- Initial environment: 18 tests passed; Ruff lint and formatting passed.
-- After D: environment rebuild: API import, Python base path, temporary directory,
-  and Ruff checks verified. Full tests were not rerun locally after that rebuild.
-- GitHub CI passed for both scaffold and storage commits, including tests/format/lint.
-  Latest verified run: https://github.com/anc1en7/DomainTune/actions/runs/42661195425
-- One upstream Starlette warning about httpx TestClient deprecation was observed;
-  tests still passed.
-- Docker build not tested: Docker Desktop Linux daemon was stopped. Before using
-  Docker, separately configure Docker Desktop disk image storage on D:; the project
-  environment script cannot redirect it.
-- The FIRST setup used shared uv cache `C:\Users\harsh\AppData\Local\uv\cache`.
-  It was left intact because other projects may use it. Future project downloads
-  use D:. Existing system tools can still reside on C:.
-- No software code license selected; dataset license verification pending. The Qwen
-  model card was checked and advertises Apache-2.0. Pin and record exact revisions
-  and upstream licenses before experiments/distribution.
+1. Load the environment; verify clean Git state and existing tests.
+2. Implement pinned ingestion using existing revisions and canonical labels.
+3. Create deterministic IDs/hashes and stratified train/validation manifests.
+4. Audit nulls, label counts, Unicode, exact/normalized duplicates and near-duplicates.
+5. Define leakage handling without changing the official test benchmark silently.
+6. Write data audit and meaningful isolation/provenance tests; commit/push milestones.
+7. Stop after Phase 1. Do not begin baselines until requested.
 
-## Recommended next action: finish Phase 0
-
-1. Load the D: environment script; inspect current hardware and free storage.
-2. Select/install a CUDA-enabled PyTorch build and compatible ML dependencies.
-   Check the existing lockfile and package index choice rather than assuming
-   `uv sync --extra ml` installs the right CUDA build.
-3. Pin Qwen and dataset revisions; record provenance and licenses.
-4. Load Qwen with its official chat template and run deterministic inference.
-5. Measure prompt token lengths, then run a 20-step LoRA smoke test with verified
-   response-only loss. Record peak VRAM, duration, and failures.
-6. Update hardware feasibility notes with evidence. No cloud fallback.
-
-Suggested starting settings, not a measured optimum:
-
-| Setting | Candidate |
-|---|---|
-| Model | Qwen/Qwen2.5-0.5B-Instruct |
-| Adaptation | Standard LoRA; try 4-bit QLoRA only if needed and compatible |
-| Precision | FP16 initially; verify BF16 support |
-| Rank / alpha / dropout | 8 / 16 / 0.05 |
-| Target modules | q_proj, v_proj; verify names |
-| Micro-batch / accumulation | 1 / 16 |
-| Learning rate | 2e-4 |
-| Epochs | Start with 2, choose using validation macro-F1 |
-| Memory controls | Gradient checkpointing; disable cache during training |
-| Optimizer | Standard AdamW |
-| First data experiment | Stratified 10% of training data after smoke test |
-
-Important: 256 tokens is only a proposal. All 77 full label names may exceed the
-budget. Measure the complete chat prompt plus response; validate a compact label-ID
-schema if needed, keep it identical across unchanged/fine-tuned comparisons, and
-never truncate away labels or the assistant target. Save the exact canonical mapping.
-
-## Remaining phases
-
-0. Environment: inference and measured smoke train (initialization done).
-1. Data: pinned ingestion, canonical labels, train/validation split, leakage audit.
-2. Baselines: majority, TF-IDF, unchanged Qwen with shared evaluation contract.
-3. Training: completion-only LoRA with validation checkpoint selection.
-4. Ablation: rank or data-fraction comparison within local compute limits.
-5. Final evaluation: freeze champion, untouched official test, errors and performance.
-6. Serving: real model backend, strict API errors/limits, Docker verification.
-7. Reliability: reproducibility, regression checks, deployment documentation.
-8. Portfolio: actual results, model card, demo, evidence-backed resume bullets.
-
-Never tune prompts, hyperparameters, or checkpoints on the official test set. Count
-invalid outputs as incorrect. Never fabricate labels, metrics, or completed work.
-The user ended the session; this handoff is for resumption, not authorization to
-start a long training run before they return.
+Never tune prompts, hyperparameters, or checkpoints on official test results.
+Count invalid outputs as incorrect. Never fabricate metrics or completed work.

@@ -33,7 +33,25 @@ Initial smoke run on 2026-11-10 (`reports/phase0-initial-smoke.json`):
   it. This one-example probe is not a baseline accuracy measurement.
 - Smoke examples were the first 32 training rows; low loss is not evidence of generalization.
 
-A fixed-shape padding rerun is being measured to reduce allocator fragmentation.
+Fixed-shape rerun passed (`reports/phase0-smoke.json`):
+
+- Same pinned inputs, 32 examples, BF16 LoRA, and 20 optimizer updates.
+- Pad to 551 tokens with an explicit attention mask and ignored padding labels;
+  clear unused inference cache before training. No prompt or response truncation.
+- Training: 226.17 seconds; warm cached model load: 1.61 seconds.
+- Peak allocated: 2,056,892,416 bytes (1.92 GiB).
+- Peak reserved: 2,306,867,200 bytes (2.15 GiB), below physical 4 GiB VRAM.
+- Adapter reload and generation passed. Adapter weights are approximately 2.07 MiB.
+- All 32 smoke examples have label `card_arrival`. This verifies the mechanics only;
+  loss reduction and the reloaded prediction do not measure classification quality.
+
+**Phase 0 exit gate passed for the measured 551-token configuration.** Use standard
+BF16 LoRA locally; quantization is unnecessary for this smoke configuration.
+The proposed 640-token full-data limit covers measured training rows but has not
+yet been memory-tested; recheck it with representative labels before full training.
+The first run's load time includes weight retrieval and is not a cached-load benchmark.
+Official test examples were never used for generation, tuning, or training; the
+Datasets builder did materialize both official splits in its local cache.
 Driver-reported CUDA capability is not proof of a compatible installed PyTorch runtime.
 The 4 GiB GPU requires an actual measured LoRA smoke test before choosing settings.
 User constraints: zero budget, local compute only, no paid APIs/cloud GPUs.
@@ -62,5 +80,11 @@ Generated reports, canonical labels, and adapter files stay in ignored
 `--output outputs/phase0-<attempt>` for each subsequent attempt to retain evidence.
 Successful completion must include adapter reload and deterministic generation.
 No official test evaluation, full training, or serving implementation is included.
+
+The completed fixed-shape run is under `outputs/phase0-fixed-shape/`; the initial
+run is under `outputs/phase0-attempt3/`. Canonical label IDs are array indices in
+`reports/phase0-labels.json`. `configs/phase0.yaml` records source revisions and licenses.
+All 18 existing tests and Ruff checks passed after runner changes. An upstream
+Starlette TestClient deprecation warning remains; it does not fail tests.
 
 Package source: https://pytorch.org/get-started/previous-versions/ (CUDA 12.8).

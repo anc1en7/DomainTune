@@ -131,6 +131,13 @@ def main():
             any(v == -100 for v in y) and any(v != -100 for v in y) for _, y in encoded
         )
         report["sample_hash"] = hashlib.sha256(json.dumps(encoded).encode()).hexdigest()
+        # Reuse one allocation shape instead of caching many large vocabulary-logit shapes.
+        padded_length = max(len(x) for x, _ in encoded)
+        report["padded_smoke_sequence_length"] = padded_length
+        report["smoke_label_counts"] = {
+            labels[label]: sum(row["label"] == label for row in data.select(range(len(encoded))))
+            for label in sorted(set(data.select(range(len(encoded)))["label"]))
+        }
         print(json.dumps({"stage": "token_lengths", **report["token_lengths"]}), flush=True)
         dtype = torch.bfloat16 if report["bf16_supported"] else torch.float16
         report["precision"] = str(dtype)
@@ -169,6 +176,7 @@ def main():
         except ValueError as exc:
             report["base_parse_error"] = str(exc)
         report["inference_peak_bytes"] = torch.cuda.max_memory_allocated()
+        torch.cuda.empty_cache()
         model = get_peft_model(
             model,
             LoraConfig(
@@ -196,9 +204,13 @@ def main():
             loss_sum = 0.0
             for micro in range(args.accumulation):
                 x, y = encoded[(step * args.accumulation + micro) % len(encoded)]
+                padding = padded_length - len(x)
                 batch = {
-                    "input_ids": torch.tensor([x], device="cuda"),
-                    "labels": torch.tensor([y], device="cuda"),
+                    "input_ids": torch.tensor(
+                        [x + [tokenizer.pad_token_id] * padding], device="cuda"
+                    ),
+                    "labels": torch.tensor([y + [-100] * padding], device="cuda"),
+                    "attention_mask": torch.tensor([[1] * len(x) + [0] * padding], device="cuda"),
                 }
                 with torch.autocast("cuda", dtype=dtype):
                     loss = model(**batch).loss
