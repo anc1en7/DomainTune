@@ -4,3 +4,8 @@ systems: [majority, tfidf_logistic_regression, unchanged_llm]
 model_id: Qwen/Qwen2.5-0.5B-Instruct
 model_revision: 7ae557604adf67be50417f59c2c2f167def9a775
 prompt_version: v1
+max_new_tokens: 48
+warmup: 3
+tfidf:
+  analyzers: [word, char_wb]
+  C: [1.0, 4.0]
