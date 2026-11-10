@@ -2,10 +2,17 @@
 
 ## Status and stopping point
 
-Phase 2 is complete. STOP HERE: the user requires stopping after each phase and
-waiting before starting the next. Phase 3 has not started. Validation baselines
-are complete; no full training or official test evaluation has run. The API remains a
-skeleton returning 503 when a model backend is needed.
+Phase 3 is running locally; do not launch a second training process.
+The user authorized Phase 3 on 2026-11-10. The hidden PowerShell worker runs
+`scripts/run_phase3.ps1`: three epochs, validation checkpoint selection,
+clean-process adapter reload, independent metric reconstruction, reports, tests,
+and a commit/push of verified evidence. It stops before Phase 4.
+Inspect `outputs/phase3-worker-status.txt`, `outputs/phase3-worker.stdout.log`,
+`outputs/phase3-worker.stderr.log`, and `outputs/adapters/phase3-r8/run.json`.
+Per-update progress is in `outputs/adapters/phase3-r8/training.jsonl`.
+No official test evaluation has run. The API remains a skeleton returning 503.
+If the worker fails, preserve its evidence and fix the cause before rerunning in
+a new output directory. Existing directories are never overwritten.
 
 Read AGENTS.md and DomainTune_LLM_Fine_Tuning_Project_Spec.md before future work.
 The user also requires committing and pushing every crucial verified change.
@@ -124,6 +131,8 @@ prompt, provenance and lock hashes, package versions and configuration.
   TestClient deprecation warning remains. No large model/data artifacts committed.
 
 ## Resume after user authorizes Phase 3
+
+Historical checklist below; Phase 3 is now authorized and underway.
 
 1. Load the environment; verify clean Git state and existing tests.
 2. Read the Phase 3 specification and baseline report; verify frozen manifests.

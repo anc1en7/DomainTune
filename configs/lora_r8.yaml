@@ -15,5 +15,4 @@ warmup_ratio: 0.03
 weight_decay: 0.01
 selection_metric: validation_macro_f1
 # Full official training prompts measured at 530-625 tokens in Phase 0.
-# 640 is a proposed full-data budget; smoke results apply to their recorded padded length.
-# Full training and validation checkpoint selection are not implemented yet.
+# Fixed padding stabilizes allocator use. Checkpoints selected once per epoch on validation.

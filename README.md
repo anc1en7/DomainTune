@@ -3,9 +3,9 @@
 Reproducible BANKING77 intent classification comparing TF-IDF, unchanged
 Qwen2.5-0.5B-Instruct, and LoRA fine-tuning across 77 canonical intent classes.
 
-**Status: Phase 2 complete. Validation accuracy / macro-F1: TF-IDF 89.2% / 0.891;
+**Status: Phase 3 in progress. Validation accuracy / macro-F1: TF-IDF 89.2% / 0.891;
 unchanged Qwen 13.7% / 0.152, with 60.8% invalid outputs. No official test
-evaluation or full training has run. Work stops here until Phase 3 is requested.**
+evaluation has run.**
 See the [baseline report](reports/baselines.md) for settings and reproduction.
 Frozen splits contain 8,992 training, 1,000 validation, and 3,080 official test rows.
 Eleven training duplicates were excluded; 137 near-duplicate candidate pairs
@@ -76,8 +76,10 @@ docker run --rm -p 8000:8000 domaintune
 `scripts/prepare_data.py --config configs/data.yaml` and
 `scripts/run_baselines.py --config configs/baseline.yaml` are implemented (require
 the ML extra). See the baseline report for separate classical and LLM commands.
-Training, final evaluation, and benchmark CLIs in specification section 12 remain
-future work; training configs remain proposals.
+`scripts/train_peft.py --config configs/lora_r8.yaml` implements primary LoRA
+training; `scripts/evaluate_model.py --checkpoint <path> --split validation`
+verifies adapter reload in a fresh process. See [training protocol](reports/training.md).
+Final test evaluation and benchmark CLIs remain future work.
 Select prompts and checkpoints on validation only. Count invalid predictions as incorrect.
 Never silently truncate messages or invent canonical labels.
 
