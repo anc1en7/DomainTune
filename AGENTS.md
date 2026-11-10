@@ -2,6 +2,7 @@
 
 - Commit and push to GitHub after each crucial, verified change. Keep large
   downloaded artifacts and generated checkpoints out of Git.
+- Stop after completing each phase; wait for the user before starting the next phase.
 
 - Budget is zero: use local compute and free public downloads only. Do not use paid
   APIs, cloud GPUs, billable hosting, or services requiring payment.

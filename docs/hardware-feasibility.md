@@ -19,7 +19,21 @@ Verified on 2026-11-10 after installing the locked ML extra:
 - D: free storage after installation: 152,069,365,760 bytes (about 142 GiB).
 - All 18 existing tests and Ruff checks passed with ML dependencies installed.
 
-Model loading, token counts, peak memory, and 20-step training feasibility remain unverified.
+Initial smoke run on 2026-11-10 (`reports/phase0-initial-smoke.json`):
+
+- Full-label chat plus completion: 530-625 tokens across all 10,003 official training rows;
+  every row exceeds 256 tokens. No truncation was used.
+- BF16 rank-8 LoRA completed 20 optimizer steps (16 micro-batches each) in 226.83 seconds.
+- Prompt/completion token-prefix and response-only loss masking checks passed.
+- Trainable parameters: 540,672 of 494,573,440 total; adapter weights: 2,175,168 bytes.
+- Adapter saved and reloaded with a fresh base model in the same process; generation worked.
+- Peak allocated: 2,056,887,808 bytes (1.92 GiB); peak reserved: 5,297,405,952 bytes
+  (4.93 GiB). Reserved memory exceeds physical VRAM, so this is not a clean 4 GiB fit.
+- Initial unchanged-model output used an unknown label (`status`); the strict parser rejected
+  it. This one-example probe is not a baseline accuracy measurement.
+- Smoke examples were the first 32 training rows; low loss is not evidence of generalization.
+
+A fixed-shape padding rerun is being measured to reduce allocator fragmentation.
 Driver-reported CUDA capability is not proof of a compatible installed PyTorch runtime.
 The 4 GiB GPU requires an actual measured LoRA smoke test before choosing settings.
 User constraints: zero budget, local compute only, no paid APIs/cloud GPUs.

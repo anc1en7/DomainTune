@@ -1,0 +1,71 @@
+{
+  "status": "passed",
+  "steps": 20,
+  "accumulation": 16,
+  "model_id": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "dataset_id": "PolyAI/banking77",
+  "dataset_revision": "1846984189f2bc0ac51c6fc3a600fa9e1714e0c6",
+  "model_license": "apache-2.0",
+  "dataset_license": [
+    "cc-by-4.0"
+  ],
+  "python": "3.12.13",
+  "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU",
+  "cuda": "12.8",
+  "bf16_supported": true,
+  "versions": {
+    "torch": "2.11.0+cu128",
+    "transformers": "4.57.6",
+    "datasets": "4.8.5",
+    "peft": "0.21.2",
+    "accelerate": "1.15.0"
+  },
+  "seed": 42,
+  "prompt_version": "v1",
+  "token_lengths": {
+    "min": 530,
+    "max": 625,
+    "over_256": 10003,
+    "training_rows": 10003
+  },
+  "mask_verified": true,
+  "sample_hash": "5dea6438e4cd89fec3322545a473ed193b88581672d6f296032a1fd5b300ac28",
+  "precision": "torch.bfloat16",
+  "load_seconds": 224.39171690004878,
+  "base_output": "{\"intent\": \"status\"}",
+  "base_parse_error": "Unknown intent",
+  "inference_peak_bytes": 1060737024,
+  "parameters": {
+    "trainable": 540672,
+    "total": 494573440
+  },
+  "losses": [
+    0.3966850822325796,
+    0.2609311001142487,
+    0.121577303041704,
+    0.03738724690629169,
+    0.015032501134555787,
+    0.005479906430991832,
+    0.00277653136436129,
+    0.0012912802631035447,
+    0.000701233835570747,
+    0.00048254231114697177,
+    0.00036602998625312466,
+    0.0003298203337180894,
+    0.000305233941617189,
+    0.0003030565603694413,
+    0.0003031876913155429,
+    0.0003133457557851216,
+    0.00030078195050009526,
+    0.0002937748749900493,
+    0.0002786636287055444,
+    0.0002667165399543592
+  ],
+  "train_seconds": 226.8258499999065,
+  "train_peak_allocated_bytes": 2056887808,
+  "train_peak_reserved_bytes": 5297405952,
+  "reloaded_output": "{\"intent\": \"card_arrival\"}",
+  "adapter_reload_passed": true,
+  "elapsed_seconds": 533.0047273000237
+}
