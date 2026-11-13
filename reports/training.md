@@ -16,6 +16,20 @@ with reset state, or the original experiment can be restarted in a new directory
 Wait for the user's instruction before resuming. Add stateful checkpoints and
 graceful stopping before another long run.
 
+Continuation work on 2026-11-13: the evaluation CLI now accepts a fresh `--output`
+directory for standalone validation of the retained epoch-1 checkpoint. It preserves
+the interrupted predictions and does not claim reproduction when no completed
+training-time validation exists. Example:
+
+```powershell
+. .\scripts\environment.ps1
+.venv\Scripts\python.exe scripts/evaluate_model.py --checkpoint outputs/adapters/phase3-r8/epoch-1 --output outputs/phase3-epoch1-validation
+```
+
+The restart-versus-reset-state continuation choice remains pending. No further
+training has started. Stateful checkpoints and graceful stopping remain required
+before another long training run.
+
 The 640-token probe subsequently passed two optimizer updates in 22.24 seconds:
 peak allocated 2,222,181,376 bytes (2.07 GiB), reserved 2,462,056,448 bytes
 (2.29 GiB). All 8,992 rows fit, with actual lengths 530–625. Probe losses were
