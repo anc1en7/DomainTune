@@ -1,0 +1,41 @@
+{
+  "status": "verified",
+  "probe_only": true,
+  "updates": 3,
+  "stopped_after_update": 1,
+  "matching_learning_rates": true,
+  "max_loss_difference": 0.0007492799704778008,
+  "max_adapter_tensor_difference": 0.0004034645389765501,
+  "loss_absolute_tolerance": 0.001,
+  "adapter_absolute_tolerance": 0.0005,
+  "bitwise_equal_adapter_tensors": 0,
+  "adapter_tensor_count": 96,
+  "restoration_audit": {
+    "optimizer_tensors_equal": 288,
+    "scheduler_equal": true,
+    "adapter_checksum_verified": true
+  },
+  "bitwise_reproducible": false,
+  "restored": [
+    "adapter",
+    "optimizer",
+    "scheduler",
+    "python_rng",
+    "numpy_rng",
+    "torch_rng",
+    "cuda_rng",
+    "data_position"
+  ],
+  "runs": [
+    "outputs\\adapters\\continuation-check-uninterrupted",
+    "outputs\\adapters\\continuation-check-stopped",
+    "outputs\\adapters\\continuation-check-resumed-audit"
+  ],
+  "adapter_sha256": "15fad2d1e9facd85e2cd1d7a43dff5aecd18b2a6f30bd8729b72587c21ad34ce",
+  "source_commits": [
+    "bfb484ef8b2cc8eca1680bd0f4505c38a281b663",
+    "bfb484ef8b2cc8eca1680bd0f4505c38a281b663",
+    "bfb484ef8b2cc8eca1680bd0f4505c38a281b663"
+  ],
+  "limitation": "Mechanics probe under concurrent local validation; not a performance benchmark or quality result. Stateful restoration does not establish bitwise-identical GPU continuation."
+}

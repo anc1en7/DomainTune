@@ -8,13 +8,19 @@ from domaintune.parse import InvalidPrediction, parse_prediction
 from domaintune.prompts import build_messages
 
 
-def evaluate_adapter(model, tokenizer, rows, labels, destination):
+class EvaluationStopped(Exception):
+    """Validation interrupted deliberately; partial predictions remain evidence."""
+
+
+def evaluate_adapter(model, tokenizer, rows, labels, destination, stop_requested=None):
     import torch
 
     model.eval()
     predictions, outputs, latencies = [], [], []
     with destination.open("w", encoding="utf-8") as log:
         for index, row in enumerate(rows):
+            if stop_requested and stop_requested():
+                raise EvaluationStopped("Validation stopped at an example boundary")
             encoded = tokenizer.apply_chat_template(
                 build_messages(row["text"], labels),
                 tokenize=True,

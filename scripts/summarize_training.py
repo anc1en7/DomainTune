@@ -25,7 +25,10 @@ def main():
     assert len(updates) == run["total_optimizer_steps"]
     assert [u["step"] for u in updates] == list(range(1, len(updates) + 1))
     assert all(math.isfinite(u["loss"]) for u in updates)
-    for epoch in run["epochs"]:
+    candidates = ([run["initial_validation"]] if "initial_validation" in run else []) + run[
+        "epochs"
+    ]
+    for epoch in candidates:
         records = [
             json.loads(s)
             for s in (args.run / f"validation-epoch-{epoch['epoch']}.jsonl")
@@ -48,7 +51,7 @@ def main():
             (args.run / f"validation-epoch-{epoch['epoch']}.json").read_text("utf-8")
         )
         assert all(rebuilt[k] == original[k] for k in rebuilt)
-    selected = max(run["epochs"], key=lambda e: e["macro_f1"])
+    selected = max(candidates, key=lambda e: e["macro_f1"])
     assert selected["epoch"] == run["best_epoch"]
     reload = json.loads((args.run / "reload-validation.json").read_text("utf-8"))
     assert reload["reproduced_training_validation"] and reload["clean_process_reload"]
@@ -79,8 +82,8 @@ def main():
     axes[0].plot([u["step"] for u in updates], [u["loss"] for u in updates], alpha=0.6)
     axes[0].set(xlabel="Optimizer update", ylabel="Completion loss")
     axes[1].plot(
-        [e["epoch"] for e in run["epochs"]],
-        [e["macro_f1"] for e in run["epochs"]],
+        [e["epoch"] for e in candidates],
+        [e["macro_f1"] for e in candidates],
         marker="o",
         label="LoRA r8",
     )
@@ -103,8 +106,21 @@ def main():
         "phase3-training.png. Official test evaluation has not run. Phase 3 is complete; "
         "stop before Phase 4 pending the user's instruction.\n"
     )
+    if "continuation" in run:
+        summary += (
+            "\nThis is a separate continuation experiment from the saved epoch-1 adapter. "
+            "AdamW and the linear schedule were reset for two additional epochs. "
+            "It is not an exact resume of the original three-epoch run. "
+            "The starting epoch-1 checkpoint was also eligible for selection.\n"
+        )
     report_path = root / "reports/training.md"
     text = report_path.read_text("utf-8").split("\n\n## Verified primary run")[0]
+    if "continuation" in run:
+        text = text.replace(
+            "Status: reset-state continuation authorized on 2026-11-13; Phase 3 incomplete.",
+            "Status: Phase 3 complete through a separately recorded reset-state continuation.\n"
+            "The original stopped run is retained below as historical evidence.",
+        )
     text = text.replace(
         "Status: implementation and 640-token feasibility verified; primary run in progress.",
         "Status: Phase 3 complete; full training and clean-process reload verified.",
@@ -118,10 +134,22 @@ def main():
         "Phase 3 is running locally; do not launch a second training process.",
         "Phase 3 is complete. STOP before Phase 4 until the user requests it.",
     )
+    if "continuation" in run:
+        text = (
+            "# Current status: Phase 3 complete\n\n"
+            "The user authorized continuation after epoch 1 on 2026-11-13. "
+            "Two additional epochs ran with reset optimizer/scheduler state as a separate "
+            "experiment. See the verified report below. Stop before Phase 4.\n\n"
+            "The following earlier stopping-point notes are historical.\n\n" + text
+        )
     handoff.write_text(text + summary, "utf-8")
     readme = root / "README.md"
     text = readme.read_text("utf-8").replace(
         "Status: Phase 3 in progress.", "Status: Phase 3 complete."
+    )
+    text = text.replace(
+        "Status: Phase 3 continuation authorized from epoch 1 with reset training state.",
+        "Status: Phase 3 complete through a verified reset-state continuation after epoch 1.",
     )
     readme.write_text(text, "utf-8")
     print(summary, flush=True)

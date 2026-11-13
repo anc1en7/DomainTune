@@ -8,6 +8,8 @@ import math
 import os
 import platform
 import random
+import shutil
+import signal
 import subprocess
 import time
 import traceback
@@ -16,7 +18,7 @@ from pathlib import Path
 import yaml
 
 from domaintune.baselines import load_frozen_data, sha256
-from domaintune.predict import evaluate_adapter
+from domaintune.predict import EvaluationStopped, evaluate_adapter
 from domaintune.prompts import PROMPT_VERSION
 from domaintune.train import accumulation_size, encode_completion
 
@@ -26,6 +28,11 @@ def main():
     parser.add_argument("--config", type=Path, default=Path("configs/lora_r8.yaml"))
     parser.add_argument("--output", type=Path, default=Path("outputs/adapters/phase3-r8"))
     parser.add_argument("--probe-steps", type=int, default=0)
+    parser.add_argument("--initialize-from", type=Path)
+    parser.add_argument("--start-epoch", type=int, default=1)
+    parser.add_argument("--resume-state", type=Path)
+    parser.add_argument("--initial-validation", type=Path)
+    parser.add_argument("--stop-after-steps", type=int, default=0)
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     if root.drive.upper() != "D:" or not os.environ.get("HF_HOME", "").startswith(str(root)):
@@ -36,15 +43,30 @@ def main():
     output.mkdir(parents=True, exist_ok=False)
     config = yaml.safe_load(args.config.read_text("utf-8"))
     report = {"status": "running", "config": config, "probe_steps": args.probe_steps}
+    if args.initialize_from and args.resume_state:
+        raise ValueError("Choose adapter initialization or full-state resume")
+    if args.start_epoch < 1:
+        raise ValueError("start-epoch must be positive")
     started = time.perf_counter()
+    stopping = False
+
+    def request_stop(*_):
+        nonlocal stopping
+        stopping = True
+
+    signal.signal(signal.SIGINT, request_stop)
+    signal.signal(signal.SIGTERM, request_stop)
 
     def save_report():
         report["elapsed_seconds"] = time.perf_counter() - started
-        (output / "run.json").write_text(json.dumps(report, indent=2) + "\n", "utf-8")
+        temporary = output / "run.json.tmp"
+        temporary.write_text(json.dumps(report, indent=2) + "\n", "utf-8")
+        temporary.replace(output / "run.json")
 
     try:
+        import numpy as np
         import torch
-        from peft import LoraConfig, get_peft_model
+        from peft import LoraConfig, PeftModel, get_peft_model
         from transformers import (
             AutoModelForCausalLM,
             AutoTokenizer,
@@ -110,16 +132,51 @@ def main():
             dtype=torch.bfloat16,
             attn_implementation="sdpa",
         ).to("cuda")
-        model = get_peft_model(
-            model,
-            LoraConfig(
-                r=config["r"],
-                lora_alpha=config["lora_alpha"],
-                lora_dropout=config["lora_dropout"],
-                target_modules=config["target_modules"],
-                task_type="CAUSAL_LM",
-            ),
-        )
+        initial = args.initialize_from
+        state = None
+        if args.resume_state:
+            if not args.resume_state.resolve().is_relative_to(root / "outputs"):
+                raise ValueError("Resume state must be under project outputs")
+            state = torch.load(args.resume_state, map_location="cpu", weights_only=False)
+            if state["config"] != config or state["processed_sha256"] != hashes:
+                raise ValueError("Resume configuration/data mismatch")
+            if state["probe_steps"] != args.probe_steps:
+                raise ValueError("Resume probe schedule mismatch")
+            initial = args.resume_state.parent
+            if sha256(initial / "adapter_model.safetensors") != state["adapter_sha256"]:
+                raise ValueError("Resume adapter checksum mismatch")
+            args.start_epoch = state["start_epoch"]
+        if initial:
+            initial = initial.resolve()
+            if not initial.is_relative_to(root / "outputs"):
+                raise ValueError("Checkpoint must be a local project output")
+            parent_run = json.loads((initial.parent / "run.json").read_text("utf-8"))
+            for key in ("model_id", "model_revision", "r", "lora_alpha", "target_modules"):
+                if parent_run["config"][key] != config[key]:
+                    raise ValueError(f"Parent checkpoint configuration mismatch: {key}")
+            for key in ("processed_sha256", "prompt_sha256", "provenance_sha256", "lock_sha256"):
+                if parent_run[key] != report[key]:
+                    raise ValueError(f"Parent checkpoint provenance mismatch: {key}")
+            report["continuation"] = {
+                "checkpoint": str(initial.relative_to(root)),
+                "adapter_sha256": sha256(initial / "adapter_model.safetensors"),
+                "exact_resume": state is not None,
+                "bitwise_continuation_verified": False,
+                "optimizer_scheduler_reset": state is None,
+                "start_epoch": args.start_epoch,
+            }
+            model = PeftModel.from_pretrained(model, initial, is_trainable=True)
+        else:
+            model = get_peft_model(
+                model,
+                LoraConfig(
+                    r=config["r"],
+                    lora_alpha=config["lora_alpha"],
+                    lora_dropout=config["lora_dropout"],
+                    target_modules=config["target_modules"],
+                    task_type="CAUSAL_LM",
+                ),
+            )
         model.config.use_cache = False
         if config["gradient_checkpointing"]:
             model.gradient_checkpointing_enable(
@@ -145,19 +202,126 @@ def main():
         save_report()
         step = 0
         best = -1.0
+        first_epoch, first_index, saved_losses = 0, 0, []
+        if args.initialize_from and args.initial_validation:
+            validation = json.loads(args.initial_validation.read_text("utf-8"))
+            if (
+                validation["adapter_sha256"] != report["continuation"]["adapter_sha256"]
+                or validation["processed_sha256"] != hashes
+                or not validation["clean_process_reload"]
+            ):
+                raise ValueError("Initial checkpoint validation provenance mismatch")
+            initial_epoch = args.start_epoch - 1
+            shutil.copytree(initial, output / f"epoch-{initial_epoch}")
+            shutil.copy2(args.initial_validation, output / f"validation-epoch-{initial_epoch}.json")
+            shutil.copy2(
+                args.initial_validation.parent / "reload-predictions.jsonl",
+                output / f"validation-epoch-{initial_epoch}.jsonl",
+            )
+            report["initial_validation"] = {
+                "epoch": initial_epoch,
+                **{k: validation[k] for k in ("accuracy", "macro_f1", "invalid_rate")},
+                "validation_report_sha256": sha256(args.initial_validation),
+            }
+            best = validation["macro_f1"]
+            report["best_epoch"] = initial_epoch
+            report["selected_checkpoint"] = str(
+                (output / f"epoch-{initial_epoch}").relative_to(root)
+            )
+        if state:
+            optimizer.load_state_dict(state["optimizer"])
+            scheduler.load_state_dict(state["scheduler"])
+            restored = optimizer.state_dict()
+            restored_tensors = 0
+            for parameter, values in state["optimizer"]["state"].items():
+                for key, expected in values.items():
+                    actual = restored["state"][parameter][key]
+                    if torch.is_tensor(expected):
+                        if not torch.equal(expected.cpu(), actual.cpu()):
+                            raise ValueError(f"Optimizer tensor restoration mismatch: {key}")
+                        restored_tensors += 1
+                    elif expected != actual:
+                        raise ValueError(f"Optimizer state restoration mismatch: {key}")
+            if scheduler.state_dict() != state["scheduler"]:
+                raise ValueError("Scheduler restoration mismatch")
+            report["restoration_audit"] = {
+                "optimizer_tensors_equal": restored_tensors,
+                "scheduler_equal": True,
+                "adapter_checksum_verified": True,
+            }
+            first_epoch, first_index = state["epoch"], state["next_index"]
+            step, saved_losses = state["step"], state["losses"]
+            report["epochs"] = state["report"]["epochs"]
+            report["best_epoch"] = state["report"]["best_epoch"]
+            if "initial_validation" in state["report"]:
+                report["initial_validation"] = state["report"]["initial_validation"]
+            best = state["best"]
+            previous = args.resume_state.parent.parent
+            for item in previous.iterdir():
+                if item.name.startswith(("epoch-", "validation-")):
+                    if item.is_dir():
+                        shutil.copytree(item, output / item.name)
+                    else:
+                        shutil.copy2(item, output / item.name)
+            if "selected_checkpoint" in state["report"]:
+                report["selected_checkpoint"] = str(
+                    (output / Path(state["report"]["selected_checkpoint"]).name).relative_to(root)
+                )
+            random.setstate(state["python_rng"])
+            np.random.set_state(state["numpy_rng"])
+            torch.set_rng_state(state["torch_rng"])
+            torch.cuda.set_rng_state_all(state["cuda_rng"])
+
+        def save_state(epoch, next_index, losses, name):
+            checkpoint = output / name
+            model.save_pretrained(checkpoint)
+            tokenizer.save_pretrained(checkpoint)
+            torch.save(
+                {
+                    "config": config,
+                    "probe_steps": args.probe_steps,
+                    "adapter_sha256": sha256(checkpoint / "adapter_model.safetensors"),
+                    "processed_sha256": hashes,
+                    "optimizer": optimizer.state_dict(),
+                    "scheduler": scheduler.state_dict(),
+                    "python_rng": random.getstate(),
+                    "numpy_rng": np.random.get_state(),
+                    "torch_rng": torch.get_rng_state(),
+                    "cuda_rng": torch.cuda.get_rng_state_all(),
+                    "epoch": epoch,
+                    "next_index": next_index,
+                    "losses": losses,
+                    "step": step,
+                    "start_epoch": args.start_epoch,
+                    "report": report,
+                    "best": best,
+                },
+                checkpoint / "training-state.pt",
+            )
+            report["latest_state"] = str((checkpoint / "training-state.pt").relative_to(root))
+            save_report()
+
         with (output / "training.jsonl").open("w", encoding="utf-8") as log:
-            for epoch in range(config["epochs"]):
+            if state:
+                for line in (previous / "training.jsonl").read_text("utf-8").splitlines():
+                    if json.loads(line)["step"] <= step:
+                        log.write(line + "\n")
+                log.flush()
+            for epoch in range(first_epoch, config["epochs"]):
+                epoch_number = args.start_epoch + epoch
                 model.train()
                 model.config.use_cache = False
                 torch.cuda.empty_cache()
                 torch.cuda.reset_peak_memory_stats()
                 epoch_started = time.perf_counter()
                 order = list(range(len(encoded)))
-                random.Random(config["seed"] + epoch).shuffle(order)
+                random.Random(config["seed"] + epoch_number - 1).shuffle(order)
                 optimizer.zero_grad(set_to_none=True)
                 update_loss = 0.0
-                losses = []
+                losses = saved_losses if epoch == first_epoch else []
                 for index, row_index in enumerate(order):
+                    if epoch == first_epoch and index < first_index:
+                        continue
                     batch = {
                         k: torch.tensor([v], device="cuda") for k, v in encoded[row_index].items()
                     }
@@ -179,7 +343,7 @@ def main():
                         optimizer.zero_grad(set_to_none=True)
                         step += 1
                         entry = {
-                            "epoch": epoch + 1,
+                            "epoch": epoch_number,
                             "step": step,
                             "loss": update_loss,
                             "lr": scheduler.get_last_lr()[0],
@@ -191,20 +355,31 @@ def main():
                         update_loss = 0.0
                         if step % 10 == 0 or args.probe_steps:
                             print(json.dumps(entry), flush=True)
+                        if (
+                            stopping
+                            or (output / "STOP").exists()
+                            or (args.stop_after_steps and step >= args.stop_after_steps)
+                        ):
+                            save_state(epoch, index + 1, losses, f"stopped-step-{step}")
+                            report["status"] = "stopped_with_resumable_state"
+                            return
+                        if step % 100 == 0:
+                            save_state(epoch, index + 1, losses, f"state-step-{step}")
                         if args.probe_steps and step >= args.probe_steps:
                             break
                 torch.cuda.synchronize()
                 epoch_report = {
-                    "epoch": epoch + 1,
+                    "epoch": epoch_number,
                     "mean_update_loss": sum(losses) / len(losses),
                     "train_seconds": time.perf_counter() - epoch_started,
                     "optimizer_steps": len(losses),
                     "peak_allocated_bytes": torch.cuda.max_memory_allocated(),
                     "peak_reserved_bytes": torch.cuda.max_memory_reserved(),
                 }
-                checkpoint = output / f"epoch-{epoch + 1}"
+                checkpoint = output / f"epoch-{epoch_number}"
                 model.save_pretrained(checkpoint)
                 tokenizer.save_pretrained(checkpoint)
+                save_state(epoch, len(order), losses, f"state-before-validation-{epoch_number}")
                 if not args.probe_steps:
                     gc.collect()
                     torch.cuda.empty_cache()
@@ -213,9 +388,10 @@ def main():
                         tokenizer,
                         data["validation"],
                         labels,
-                        output / f"validation-epoch-{epoch + 1}.jsonl",
+                        output / f"validation-epoch-{epoch_number}.jsonl",
+                        stop_requested=lambda: stopping or (output / "STOP").exists(),
                     )
-                    (output / f"validation-epoch-{epoch + 1}.json").write_text(
+                    (output / f"validation-epoch-{epoch_number}.json").write_text(
                         json.dumps(validation, indent=2) + "\n", "utf-8"
                     )
                     epoch_report.update(
@@ -223,14 +399,20 @@ def main():
                     )
                     if validation["macro_f1"] > best:
                         best = validation["macro_f1"]
-                        report["best_epoch"] = epoch + 1
+                        report["best_epoch"] = epoch_number
                         report["selected_checkpoint"] = str(checkpoint.relative_to(root))
                 report["epochs"].append(epoch_report)
                 print(json.dumps(epoch_report), flush=True)
                 save_report()
+                save_state(epoch + 1, 0, [], f"state-after-validation-{epoch_number}")
+                if stopping or (output / "STOP").exists():
+                    report["status"] = "stopped_with_resumable_state"
+                    return
                 if args.probe_steps:
                     break
         report["status"] = "probe_passed" if args.probe_steps else "trained"
+    except EvaluationStopped:
+        report["status"] = "stopped_with_resumable_state"
     except BaseException:
         report["status"] = "failed"
         report["error"] = traceback.format_exc()

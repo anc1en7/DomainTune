@@ -3,7 +3,7 @@
 Reproducible BANKING77 intent classification comparing TF-IDF, unchanged
 Qwen2.5-0.5B-Instruct, and LoRA fine-tuning across 77 canonical intent classes.
 
-**Status: Phase 3 stopped at user request after saving epoch 1; awaiting resume.
+**Status: Phase 3 continuation authorized from epoch 1 with reset training state.
 Validation accuracy / macro-F1: TF-IDF 89.2% / 0.891;
 unchanged Qwen 13.7% / 0.152, with 60.8% invalid outputs. No official test
 evaluation has run.**

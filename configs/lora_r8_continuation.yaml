@@ -1,0 +1,18 @@
+# Separate experiment: saved epoch-1 adapter, reset AdamW and linear scheduler.
+# Train original epochs 2 and 3; preserve original epoch-1 artifacts.
+model_id: Qwen/Qwen2.5-0.5B-Instruct
+model_revision: 7ae557604adf67be50417f59c2c2f167def9a775
+seed: 42
+r: 8
+lora_alpha: 16
+lora_dropout: 0.05
+target_modules: [q_proj, v_proj]
+epochs: 2
+learning_rate: 0.0002
+micro_batch_size: 1
+gradient_accumulation_steps: 16
+max_sequence_length: 640
+gradient_checkpointing: true
+warmup_ratio: 0.03
+weight_decay: 0.01
+selection_metric: validation_macro_f1

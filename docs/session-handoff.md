@@ -1,5 +1,27 @@
 ﻿# Session handoff - 2026-11-10
 
+## Current continuation authorization - 2026-11-13
+
+The user authorized continuing from the saved epoch-1 adapter, with progress
+updates every five minutes and estimated time remaining. This is a separate
+experiment with reset optimizer/scheduler state. Complete Phase 3 and stop
+before Phase 4.
+
+Use `configs/lora_r8_continuation.yaml` for two additional epochs numbered 2/3,
+with output `outputs/adapters/phase3-r8-continuation`. Full epoch-1 validation
+is under `outputs/phase3-epoch1-validation`; the starting checkpoint remains
+eligible for validation-based selection. Original evidence stays untouched.
+
+Full training state is saved every 100 updates, before/after validation, and
+on a graceful stop. Create an empty `STOP` file inside the active run directory
+to stop after the next optimizer update or validation example. Resume into a
+fresh output directory using `--resume-state <training-state.pt>` with the same
+configuration. Read `run.json` for the latest complete state path.
+`scripts/training_status.py` reads progress and estimates remaining time.
+
+Earlier stopping-point notes below are historical. The new authorization
+supersedes their instruction to wait before continuing Phase 3.
+
 ## Status and stopping point
 
 Phase 3 was STOPPED at the user's request on 2026-11-10 at approximately

@@ -1,6 +1,6 @@
 # Phase 3: primary LoRA experiment
 
-Status: primary run stopped at user request after saving epoch 1. Phase 3 incomplete.
+Status: reset-state continuation authorized on 2026-11-13; Phase 3 incomplete.
 
 Epoch 1 completed 562 optimizer updates over all 8,992 training rows; mean update
 loss 0.13799548. The adapter and tokenizer are retained under
@@ -26,9 +26,28 @@ training-time validation exists. Example:
 .venv\Scripts\python.exe scripts/evaluate_model.py --checkpoint outputs/adapters/phase3-r8/epoch-1 --output outputs/phase3-epoch1-validation
 ```
 
-The restart-versus-reset-state continuation choice remains pending. No further
-training has started. Stateful checkpoints and graceful stopping remain required
-before another long training run.
+The user chose reset-state continuation after epoch 1 on 2026-11-13. Two additional
+epochs use `configs/lora_r8_continuation.yaml`, with epoch numbers 2 and 3 and a
+fresh 1,124-update linear schedule with 3% warmup. This is a separate experiment,
+not an exact resume. The original run and partial validation remain untouched.
+Full standalone epoch-1 validation supplies the initial checkpoint candidate.
+
+The runner saves full training state every 100 updates, before/after validation,
+and on a graceful stop. A `STOP` file inside the active output directory requests
+a stop at the next optimizer update or validation example. A fresh output can
+restore adapter, optimizer, scheduler, Python/NumPy/PyTorch/CUDA RNG states, and
+data position using `--resume-state <path-to-training-state.pt>` with the same
+config. The stop/resume probe compares three uninterrupted GPU updates with one
+update followed by restoration and two further updates. Probe artifacts stay
+ignored under `outputs/adapters/continuation-check-*`.
+
+The initial three-update probe showed a maximum loss difference of 0.000313
+and maximum adapter-element difference of 0.000368 after restoration. This is
+not evidence of bitwise-identical GPU continuation. A separate restoration audit
+checks every loaded optimizer tensor and the scheduler before any resumed
+update. The original epoch-1 continuation still explicitly resets optimizer and
+scheduler state. Probe source commits precede the implementation commit because
+the checks ran while the implementation was being verified.
 
 The 640-token probe subsequently passed two optimizer updates in 22.24 seconds:
 peak allocated 2,222,181,376 bytes (2.07 GiB), reserved 2,462,056,448 bytes
