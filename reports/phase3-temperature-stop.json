@@ -1,0 +1,14 @@
+{
+    "status":  "stopped_for_temperature",
+    "recorded_at":  "2026-11-13T12:04:57.6582226+05:30",
+    "user_reported_temperature_c":  100,
+    "user_reported_fan_mode":  "performance",
+    "measured_gpu_temperature_c":  87,
+    "measured_gpu_software_thermal_throttling":  true,
+    "saved_adapter":  "outputs/adapters/phase3-r8/epoch-1",
+    "validation_predictions":  "outputs/phase3-epoch1-validation/reload-predictions.jsonl",
+    "completed_validation_rows":  713,
+    "continuation_implementation_commit":  "9529fb4",
+    "long_continuation_training_started":  false,
+    "short_training_probes_completed":  true
+}

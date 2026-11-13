@@ -2,6 +2,16 @@
 
 ## Current continuation authorization - 2026-11-13
 
+CURRENT STOP: workload terminated at 12:04 IST after the user reported 100 C
+in NitroSense; NVIDIA independently reported GPU 87 C with software thermal
+throttling. Both evaluation Python processes exited, with GPU memory back to
+0 MiB. Full epoch-1 validation stopped at 713/1000 rows in the new standalone
+directory. Preserve those predictions; do not claim a validation metric.
+See `reports/phase3-temperature-stop.json`. The long two-epoch continuation
+has not started; only the three-update mechanics probes ran. Implementation
+and probe evidence are committed as `9529fb4` and pushed. Address cooling and
+recheck temperatures before further compute. No automatic restart is scheduled.
+
 The user authorized continuing from the saved epoch-1 adapter, with progress
 updates every five minutes and estimated time remaining. This is a separate
 experiment with reset optimizer/scheduler state. Complete Phase 3 and stop

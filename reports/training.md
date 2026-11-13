@@ -1,6 +1,13 @@
 # Phase 3: primary LoRA experiment
 
-Status: reset-state continuation authorized on 2026-11-13; Phase 3 incomplete.
+Status: stopped for laptop temperature on 2026-11-13; Phase 3 incomplete.
+
+The user reported 100 C in NitroSense during standalone epoch-1 validation.
+The GPU independently read 87 C with software thermal throttling. The workload
+was stopped, preserving 713/1000 predictions; no validation metric is claimed.
+The saved epoch-1 adapter is untouched. The long two-epoch continuation has
+not started. See `phase3-temperature-stop.json`. Cooling and temperature checks
+are required before further compute. No automatic restart is scheduled.
 
 Epoch 1 completed 562 optimizer updates over all 8,992 training rows; mean update
 loss 0.13799548. The adapter and tokenizer are retained under
